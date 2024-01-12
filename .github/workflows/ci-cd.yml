@@ -23,7 +23,7 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
     - name: Push Image to Docker Hub
-      run: docker push tu_usuario/tu_imagen:latest
+      run: docker push aforero68/app-age:latest
 
     # A partir de aquí, necesitarás comandos específicos para tu proveedor de servicios en la nube
     - name: Deploy to Cloud Service
