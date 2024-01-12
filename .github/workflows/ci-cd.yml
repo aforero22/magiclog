@@ -3,30 +3,43 @@ name: CI/CD Pipeline
 on:
   #push:
   #  branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:  # Define the trigger for the workflow, manual execution in this case
+
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use an Ubuntu-based runner for this job
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2   # Check out the code repository
 
     - name: Build Docker Image
-      run: docker build -t aforero68/app-age:latest .
+      run: docker build -t aforero68/app-age:latest .  # Build the Docker image from the code
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v1
       with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}   # Log in to Docker Hub using secrets
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
     - name: Push Image to Docker Hub
-      run: docker push aforero68/app-age:latest
+      run: docker push aforero68/app-age:latest  # Push the Docker image to Docker Hub
 
-    # A partir de aquí, necesitarás comandos específicos para tu proveedor de servicios en la nube
-    - name: Deploy to Cloud Service
+    - name: Deploy to Azure Container Instances
       run: |
-        # Aquí van los comandos para desplegar en tu servicio en la nube
-        # Por ejemplo, si usas ECS, sería algo como 'aws ecs update-service...'
+        # Log in to Azure CLI using service principal credentials
+        az login --service-principal -u ${{ secrets.AZURE_SP_CLIENT_ID }} -p ${{ secrets.AZURE_SP_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+        # Define Azure Container Instances (ACI) parameters
+        aciName="magiclog-container"
+        resourceGroup="magiclog"
+        image="aforero68/app-age:latest" # Replace with your Docker image
+
+        # Create an ACI container
+        az container create --resource-group $resourceGroup --name $aciName --image $image --dns-name-label $aciName --ports 3000 --environment-variables KEY=VALUE
+
+        # Wait for the container to be fully deployed
+        az container wait --resource-group $resourceGroup --name $aciName --created
+        az container wait --resource-group $resourceGroup --name $aciName --running
+        echo "Deployment to Azure Container Instances has been completed."
