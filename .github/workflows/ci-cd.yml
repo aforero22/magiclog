@@ -37,7 +37,16 @@ jobs:
         # Create an ACI container
         az container create --resource-group $resourceGroup --name $aciName --image $image --dns-name-label $aciName --ports 3000 --environment-variables KEY=VALUE
 
-        # Wait for the container to be fully deployed
-        az container wait --resource-group $resourceGroup --name $aciName --created
-        az container wait --resource-group $resourceGroup --name $aciName --running
+        # Wait for the container state will be "Running"
+        while [[ "$(az container show --resource-group $resourceGroup --name $aciName --query 'containers[0].instanceView.currentState.state' --output tsv)" != "Running" ]]; do
+          echo "Esperando a que el contenedor esté en ejecución..."
+          sleep 10
+        done
+
+        # Eait for Container is completly deployed
+        while [[ "$(az container show --resource-group $resourceGroup --name $aciName --query 'containers[0].instanceView.currentState.finishTime' --output tsv)" == "null" ]]; do
+          echo "Esperando a que el contenedor esté completamente desplegado..."
+          sleep 10
+        done
+
         echo "Deployment to Azure Container Instances has been completed."
