@@ -14,23 +14,6 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2   # Check out the code repository
 
-    - name: Install Azure CLI
-      run: |
-        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-    - name: Set up Azure credentials
-      env:
-        AZURE_CLIENT_ID: ${{ secrets.AZURE_SP_CLIENT_ID }}
-        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_SP_CLIENT_SECRET }}
-        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      run: |
-        echo "AZURE_CREDENTIALS='{}'" > $GITHUB_ENV
-
-    - name: Log in to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
     - name: Build Docker Image
       run: docker build -t aforero68/app-age:latest .  # Build the Docker image from the code
 
@@ -45,6 +28,7 @@ jobs:
 
     - name: Deploy to Azure Container Instances
       run: |
+        az login --service-principal -u ${{ secrets.AZURE_SP_CLIENT_ID }} -p ${{ secrets.AZURE_SP_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
         # Define Azure Container Instances (ACI) parameters
         aciName="magiclog-container"
         resourceGroup="magiclog"
